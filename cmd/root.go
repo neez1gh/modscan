@@ -84,6 +84,36 @@ var scanCmd = &cobra.Command{
 	},
 }
 
+var whyCmd = &cobra.Command{
+	Use:   "why [package]",
+	Short: "Show why a package is flagged",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		pkg := args[0]
+		rules, err := checker.LoadRules(rulesPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading rules: %v\n", err)
+			os.Exit(1)
+		}
+
+		for _, rule := range rules {
+			if rule.Package == pkg {
+				fmt.Printf("Package: %s\n", rule.Package)
+				fmt.Printf("Reason:  %s\n", rule.Reason)
+				fmt.Printf("Severity: %s\n", rule.Severity)
+				if len(rule.Alternatives) > 0 {
+					fmt.Println("\nAlternatives:")
+					for _, alt := range rule.Alternatives {
+						fmt.Printf("  → %s — %s\n", alt.Path, alt.Reason)
+					}
+				}
+				return
+			}
+		}
+		fmt.Printf("Package %s is not in the rules database.\n", pkg)
+	},
+}
+
 func init() {
 	scanCmd.Flags().BoolVar(&ciMode, "ci", false, "Exit with code 1 if critical issues found")
 	scanCmd.Flags().BoolVar(&outputJSON, "json", false, "Output as JSON")
@@ -91,6 +121,7 @@ func init() {
 	scanCmd.Flags().StringVar(&gomodPath, "go-mod", "go.mod", "Path to go.mod file")
 
 	rootCmd.AddCommand(scanCmd)
+	rootCmd.AddCommand(whyCmd)
 }
 
 func Execute() {
