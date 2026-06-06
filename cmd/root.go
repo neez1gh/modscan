@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var DefaultRules []byte
+
 var (
 	ciMode     bool
 	outputJSON bool
@@ -38,10 +40,10 @@ var scanCmd = &cobra.Command{
 
 		rules, err := checker.LoadRules(rulesPath)
 		if err != nil {
-			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "Warning: could not load rules: %v\n", err)
+			rules, err = checker.LoadRulesFromBytes(DefaultRules)
+			if err != nil {
+				rules = nil
 			}
-			rules = nil
 		}
 
 		var wg sync.WaitGroup
@@ -92,8 +94,11 @@ var whyCmd = &cobra.Command{
 		pkg := args[0]
 		rules, err := checker.LoadRules(rulesPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading rules: %v\n", err)
-			os.Exit(1)
+			rules, err = checker.LoadRulesFromBytes(DefaultRules)
+			if err != nil {
+				fmt.Printf("Package %s is not in the rules database.\n", pkg)
+				return
+			}
 		}
 
 		for _, rule := range rules {

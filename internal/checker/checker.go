@@ -47,7 +47,14 @@ func LoadRules(path string) ([]Rule, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parseRules(data)
+}
 
+func LoadRulesFromBytes(data []byte) ([]Rule, error) {
+	return parseRules(data)
+}
+
+func parseRules(data []byte) ([]Rule, error) {
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err

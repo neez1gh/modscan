@@ -7,19 +7,7 @@
 
 Scan your Go dependencies for known vulnerabilities, deprecated packages, and outdated versions.
 
-```
-⚠ github.com/sirupsen/logrus v1.9.3
-   Low activity, no major updates since 2021
-   → go.uber.org/zap — 10x faster, battle-tested at scale
-   → github.com/rs/zerolog — Zero allocation, simple API
-
-✗ github.com/dgrijalva/jwt-go v3.2.0
-   Officially deprecated by author
-   → github.com/golang-jwt/jwt/v5 — Official community successor
-
-✓ github.com/gin-gonic/gin v1.9.1
-   Up to date
-```
+<img src="assets/terminal.svg" width="800" alt="modscan terminal preview">
 
 ## Features
 
