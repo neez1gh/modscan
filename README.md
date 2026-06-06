@@ -1,5 +1,7 @@
 # modscan
 
+[![Go](https://github.com/neez1gh/modscan/actions/workflows/go.yml/badge.svg)](https://github.com/neez1gh/modscan/actions/workflows/go.yml)
+
 Scan your Go dependencies for known vulnerabilities, deprecated packages, and outdated versions.
 
 ```
