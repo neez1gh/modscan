@@ -1,0 +1,23 @@
+rules:
+  - package: "github.com/sirupsen/logrus"
+    reason: "Low activity, no major updates since 2021"
+    severity: "warning"
+    alternatives:
+      - path: "go.uber.org/zap"
+        reason: "10x faster, battle-tested at scale"
+      - path: "github.com/rs/zerolog"
+        reason: "Zero allocation, simple API"
+
+  - package: "github.com/dgrijalva/jwt-go"
+    reason: "Officially deprecated by author"
+    severity: "critical"
+    alternatives:
+      - path: "github.com/golang-jwt/jwt/v5"
+        reason: "Official community successor"
+
+  - package: "github.com/boltdb-go/bolt"
+    reason: "Known malicious package (supply chain attack 2025)"
+    severity: "critical"
+    alternatives:
+      - path: "go.etcd.io/bbolt"
+        reason: "Legitimate maintained fork"
