@@ -2,6 +2,7 @@ package checker
 
 import (
 	"os"
+	"time"
 
 	"modscan/internal/fetcher"
 	"modscan/internal/parser"
@@ -81,28 +82,58 @@ func CheckDep(dep parser.Dep, rules []Rule, info *fetcher.ModuleInfo) CheckResul
 
 	if info.Retracted {
 		return CheckResult{
-			Dep:    dep,
-			Status: StatusCritical,
-			Message: "Retracted by author",
+			Dep:        dep,
+			Status:     StatusCritical,
+			Message:    "Retracted by author",
 			ModuleInfo: info,
 		}
 	}
 
 	if info.Deprecated {
 		return CheckResult{
-			Dep:    dep,
-			Status: StatusCritical,
-			Message: "Deprecated",
+			Dep:        dep,
+			Status:     StatusCritical,
+			Message:    "Deprecated",
 			ModuleInfo: info,
 		}
 	}
 
-	behind := info.LatestVersion != "" && info.LatestVersion != "v0.0.0" && info.LatestVersion != dep.Version
+	latestVersion := info.LatestVersion
+	if (latestVersion == "" || latestVersion == "v0.0.0") && fetcher.IsGitHubModule(dep.Path) {
+		if ghVer, err := fetcher.FetchLatestReleaseVersion(dep.Path); err == nil && ghVer != "" {
+			latestVersion = ghVer
+		}
+	}
+
+	behind := latestVersion != "" && latestVersion != "v0.0.0" && latestVersion != dep.Version
 	if behind {
 		return CheckResult{
-			Dep:    dep,
-			Status: StatusWarning,
-			Message: "Newer version available: " + info.LatestVersion,
+			Dep:        dep,
+			Status:     StatusWarning,
+			Message:    "Newer version available: " + latestVersion,
+			ModuleInfo: info,
+		}
+	}
+
+	stale := false
+	if info.CommitTime != "" {
+		t, err := time.Parse(time.RFC3339, info.CommitTime)
+		if err == nil {
+			stale = time.Since(t) > 365*24*time.Hour
+		}
+	}
+
+	if stale && fetcher.IsGitHubModule(dep.Path) {
+		if ghTime, err := fetcher.FetchLatestCommitTime(dep.Path); err == nil && time.Since(ghTime) < 365*24*time.Hour {
+			stale = false
+		}
+	}
+
+	if stale {
+		return CheckResult{
+			Dep:        dep,
+			Status:     StatusWarning,
+			Message:    "No updates in over a year",
 			ModuleInfo: info,
 		}
 	}
