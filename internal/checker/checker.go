@@ -29,9 +29,9 @@ type Config struct {
 type ResultStatus string
 
 const (
-	StatusHealthy   ResultStatus = "healthy"
-	StatusWarning   ResultStatus = "warning"
-	StatusCritical  ResultStatus = "critical"
+	StatusHealthy  ResultStatus = "healthy"
+	StatusWarning  ResultStatus = "warning"
+	StatusCritical ResultStatus = "critical"
 )
 
 type CheckResult struct {
@@ -60,13 +60,42 @@ func CheckDep(dep parser.Dep, rules []Rule, info *fetcher.ModuleInfo) CheckResul
 		return CheckResult{Dep: dep, Status: StatusHealthy}
 	}
 
+	if result := checkAgainstRules(dep, rules, info); result != nil {
+		return *result
+	}
+
+	if info == nil {
+		return CheckResult{Dep: dep, Status: StatusHealthy}
+	}
+
+	if info.Retracted {
+		return checkResult(dep, StatusCritical, "Retracted by author", info)
+	}
+
+	if info.Deprecated {
+		return checkResult(dep, StatusCritical, "Deprecated", info)
+	}
+
+	latestVersion := resolveLatestVersion(dep, info)
+	if latestVersion != "" && latestVersion != "v0.0.0" && latestVersion != dep.Version {
+		return checkResult(dep, StatusWarning, "Newer version available: "+latestVersion, info)
+	}
+
+	if isStale(dep, info) {
+		return checkResult(dep, StatusWarning, "No updates in over a year", info)
+	}
+
+	return CheckResult{Dep: dep, Status: StatusHealthy, ModuleInfo: info}
+}
+
+func checkAgainstRules(dep parser.Dep, rules []Rule, info *fetcher.ModuleInfo) *CheckResult {
 	for _, rule := range rules {
 		if rule.Package == dep.Path {
 			status := StatusWarning
 			if rule.Severity == "critical" {
 				status = StatusCritical
 			}
-			return CheckResult{
+			return &CheckResult{
 				Dep:          dep,
 				Status:       status,
 				Message:      rule.Reason,
@@ -75,68 +104,45 @@ func CheckDep(dep parser.Dep, rules []Rule, info *fetcher.ModuleInfo) CheckResul
 			}
 		}
 	}
+	return nil
+}
 
-	if info == nil {
-		return CheckResult{Dep: dep, Status: StatusHealthy}
+func checkResult(dep parser.Dep, status ResultStatus, message string, info *fetcher.ModuleInfo) CheckResult {
+	return CheckResult{
+		Dep:        dep,
+		Status:     status,
+		Message:    message,
+		ModuleInfo: info,
 	}
+}
 
-	if info.Retracted {
-		return CheckResult{
-			Dep:        dep,
-			Status:     StatusCritical,
-			Message:    "Retracted by author",
-			ModuleInfo: info,
-		}
-	}
-
-	if info.Deprecated {
-		return CheckResult{
-			Dep:        dep,
-			Status:     StatusCritical,
-			Message:    "Deprecated",
-			ModuleInfo: info,
-		}
-	}
-
-	latestVersion := info.LatestVersion
-	if (latestVersion == "" || latestVersion == "v0.0.0") && fetcher.IsGitHubModule(dep.Path) {
+func resolveLatestVersion(dep parser.Dep, info *fetcher.ModuleInfo) string {
+	v := info.LatestVersion
+	if (v == "" || v == "v0.0.0") && fetcher.IsGitHubModule(dep.Path) {
 		if ghVer, err := fetcher.FetchLatestReleaseVersion(dep.Path); err == nil && ghVer != "" {
-			latestVersion = ghVer
+			return ghVer
 		}
 	}
+	return v
+}
 
-	behind := latestVersion != "" && latestVersion != "v0.0.0" && latestVersion != dep.Version
-	if behind {
-		return CheckResult{
-			Dep:        dep,
-			Status:     StatusWarning,
-			Message:    "Newer version available: " + latestVersion,
-			ModuleInfo: info,
-		}
+func isStale(dep parser.Dep, info *fetcher.ModuleInfo) bool {
+	if info.CommitTime == "" {
+		return false
 	}
-
-	stale := false
-	if info.CommitTime != "" {
-		t, err := time.Parse(time.RFC3339, info.CommitTime)
-		if err == nil {
-			stale = time.Since(t) > 365*24*time.Hour
-		}
+	t, err := time.Parse(time.RFC3339, info.CommitTime)
+	if err != nil {
+		return false
 	}
-
-	if stale && fetcher.IsGitHubModule(dep.Path) {
-		if ghTime, err := fetcher.FetchLatestCommitTime(dep.Path); err == nil && time.Since(ghTime) < 365*24*time.Hour {
-			stale = false
-		}
+	if time.Since(t) <= 365*24*time.Hour {
+		return false
 	}
-
-	if stale {
-		return CheckResult{
-			Dep:        dep,
-			Status:     StatusWarning,
-			Message:    "No updates in over a year",
-			ModuleInfo: info,
-		}
+	if !fetcher.IsGitHubModule(dep.Path) {
+		return true
 	}
-
-	return CheckResult{Dep: dep, Status: StatusHealthy, ModuleInfo: info}
+	ghTime, err := fetcher.FetchLatestCommitTime(dep.Path)
+	if err != nil {
+		return true
+	}
+	return time.Since(ghTime) > 365*24*time.Hour
 }
