@@ -1,23 +1,478 @@
 rules:
+  # ==========================================
+  # Logging
+  # ==========================================
   - package: "github.com/sirupsen/logrus"
-    reason: "Low activity, no major updates since 2021"
+    reason: "Project is in maintenance mode, no new features will be added. Slow compared to modern alternatives."
     severity: "warning"
     alternatives:
+      - path: "log/slog"
+        reason: "Official standard library logger (since Go 1.21)"
       - path: "go.uber.org/zap"
-        reason: "10x faster, battle-tested at scale"
+        reason: "High performance, excellent for high-load applications"
       - path: "github.com/rs/zerolog"
-        reason: "Zero allocation, simple API"
+        reason: "Zero-allocation logger, simple API"
 
+  - package: "github.com/cihub/seelog"
+    reason: "Project is abandoned (no updates for many years)."
+    severity: "critical"
+    alternatives:
+      - path: "go.uber.org/zap"
+        reason: "Modern standard for fast logging"
+
+  - package: "github.com/golang/glog"
+    reason: "Project has not been updated for a long time, has performance issues and relies on command-line flags."
+    severity: "warning"
+    alternatives:
+      - path: "log/slog"
+        reason: "Go standard library"
+
+  # ==========================================
+  # Errors
+  # ==========================================
+  - package: "github.com/pkg/errors"
+    reason: "Repository is archived. Functionality was added to the standard library (errors.Is, errors.As)."
+    severity: "critical"
+    alternatives:
+      - path: "errors"
+        reason: "Standard library (use fmt.Errorf(\"%w\", err) for wrapping)"
+
+  # ==========================================
+  # Databases / ORM
+  # ==========================================
+  - package: "github.com/lib/pq"
+    reason: "Officially in maintenance mode. Does not support new PostgreSQL features."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/jackc/pgx/v5"
+        reason: "Actively maintained, faster, supports PostgreSQL-specific types"
+      
+  - package: "github.com/jinzhu/gorm"
+    reason: "Outdated v1 version of GORM. Abandoned."
+    severity: "critical"
+    alternatives:
+      - path: "gorm.io/gorm"
+        reason: "New, actively maintained v2 version"
+
+  - package: "gopkg.in/mgo.v2"
+    reason: "Ancient MongoDB driver, long abandoned."
+    severity: "critical"
+    alternatives:
+      - path: "go.mongodb.org/mongo-driver"
+        reason: "Official MongoDB driver"
+
+  - package: "github.com/globalsign/mgo"
+    reason: "Fork of mgo, which is also no longer maintained."
+    severity: "critical"
+    alternatives:
+      - path: "go.mongodb.org/mongo-driver"
+        reason: "Official MongoDB driver"
+
+  - package: "github.com/go-pg/pg"
+    reason: "v9 version of go-pg is abandoned. Repository is in maintenance mode."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/go-pg/pg/v10"
+        reason: "Current v10 version (but overall the project is stagnating)"
+      - path: "github.com/uptrace/bun"
+        reason: "Modern ORM from the creators of go-pg"
+
+  - package: "github.com/go-redis/redis"
+    reason: "Old version (v7/v8). Project moved to a new organization."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/redis/go-redis/v9"
+        reason: "Official v9 version of go-redis"
+
+  - package: "github.com/go-redis/redis/v8"
+    reason: "v8 is deprecated and officially unsupported."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/redis/go-redis/v9"
+        reason: "Official v9 version of go-redis"
+
+  - package: "github.com/garyburd/redigo"
+    reason: "Original Redigo repository moved. Old path is unsupported."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/gomodule/redigo"
+        reason: "Current project location"
+
+  - package: "github.com/go-xorm/xorm"
+    reason: "Project moved to a new organization xorm.io."
+    severity: "warning"
+    alternatives:
+      - path: "xorm.io/xorm"
+        reason: "Current project location"
+
+  # ==========================================
+  # Routing and HTTP
+  # ==========================================
+  - package: "github.com/gorilla/mux"
+    reason: "Gorilla project was archived (though unarchived later, future is uncertain). Standard library now covers most use cases."
+    severity: "warning"
+    alternatives:
+      - path: "net/http"
+        reason: "Since Go 1.22, standard ServeMux supports path variables and HTTP methods"
+      - path: "github.com/go-chi/chi/v5"
+        reason: "Lightweight, idiomatic, compatible with standard net/http.Handler"
+
+  - package: "github.com/julienschmidt/httprouter"
+    reason: "Practically hasn't been updated for years. With Go 1.22 it lost relevance."
+    severity: "warning"
+    alternatives:
+      - path: "net/http"
+        reason: "Since Go 1.22 standard router received httprouter functionality"
+
+  - package: "github.com/go-martini/martini"
+    reason: "One of the first web frameworks for Go. Officially dead since 2014."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/gin-gonic/gin"
+        reason: "Fast and modern micro-framework"
+      - path: "github.com/go-chi/chi/v5"
+        reason: "Idiomatic router without extra dependencies"
+
+  # ==========================================
+  # Authentication / JWT / UUID
+  # ==========================================
   - package: "github.com/dgrijalva/jwt-go"
-    reason: "Officially deprecated by author"
+    reason: "Author stopped support. Contains old vulnerabilities (CVE-2020-26160)."
     severity: "critical"
     alternatives:
       - path: "github.com/golang-jwt/jwt/v5"
-        reason: "Official community successor"
+        reason: "Official community fork and successor"
 
-  - package: "github.com/boltdb-go/bolt"
-    reason: "Known malicious package (supply chain attack 2025)"
+  - package: "github.com/form3tech-oss/jwt-go"
+    reason: "Temporary fork of jwt-go, merged with golang-jwt. No longer supported."
     severity: "critical"
     alternatives:
-      - path: "go.etcd.io/bbolt"
-        reason: "Legitimate maintained fork"
+      - path: "github.com/golang-jwt/jwt/v5"
+        reason: "Official community package"
+
+  - package: "github.com/satori/go.uuid"
+    reason: "Project dead for many years, has known vulnerabilities (issues with crypto RNG)."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/google/uuid"
+        reason: "Reliable and maintained package by Google"
+      - path: "github.com/gofrs/uuid"
+        reason: "High-quality fork of the original project"
+
+  - package: "github.com/twinj/uuid"
+    reason: "Abandoned UUID package."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/google/uuid"
+        reason: "Official industry standard"
+
+  - package: "github.com/pborman/uuid"
+    reason: "Officially declared deprecated in favor of google/uuid."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/google/uuid"
+        reason: "Official industry standard"
+
+  - package: "github.com/myesui/uuid"
+    reason: "Outdated repository. Contains old bugs."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/google/uuid"
+        reason: "Package by Google"
+
+  # ==========================================
+  # Protobuf / gRPC
+  # ==========================================
+  - package: "github.com/golang/protobuf"
+    reason: "Outdated v1 version of Protobuf API. Replaced by google.golang.org/protobuf."
+    severity: "critical"
+    alternatives:
+      - path: "google.golang.org/protobuf"
+        reason: "Official Protobuf v2 (APIv2)"
+
+  - package: "github.com/gogo/protobuf"
+    reason: "Project officially abandoned (deprecated). Unsafe to use for new projects."
+    severity: "critical"
+    alternatives:
+      - path: "google.golang.org/protobuf"
+        reason: "Official Protobuf"
+
+  - package: "github.com/grpc-ecosystem/go-grpc-middleware"
+    reason: "Old version (v1) of gRPC Middleware. Switched to legacy mode."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+        reason: "Current v2 version"
+
+  # ==========================================
+  # Cloud / AWS / Telemetry
+  # ==========================================
+  - package: "github.com/aws/aws-sdk-go"
+    reason: "AWS SDK v1 is in maintenance mode. New features are released for v2."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/aws/aws-sdk-go-v2"
+        reason: "AWS SDK v2 — modular, better performance and fewer dependencies"
+
+  - package: "github.com/opentracing/opentracing-go"
+    reason: "OpenTracing project officially ended (deprecated) in favor of OpenTelemetry."
+    severity: "critical"
+    alternatives:
+      - path: "go.opentelemetry.io/otel"
+        reason: "Official OpenTelemetry standard"
+
+  - package: "github.com/uber/jaeger-client-go"
+    reason: "Deprecated. Entire Jaeger ecosystem migrated to native OpenTelemetry."
+    severity: "critical"
+    alternatives:
+      - path: "go.opentelemetry.io/otel"
+        reason: "Use OpenTelemetry OTLP exporter"
+
+  - package: "github.com/prometheus/common/log"
+    reason: "Logging package in prometheus/common is officially deprecated."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/go-kit/log"
+        reason: "Official recommendation from Prometheus developers"
+
+  - package: "github.com/olivere/elastic"
+    reason: "Abandoned by author in favor of the official client from Elastic."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/elastic/go-elasticsearch/v8"
+        reason: "Official Elasticsearch client"
+
+  # ==========================================
+  # Utilities / Formats / CLI
+  # ==========================================
+  - package: "go.uber.org/atomic"
+    reason: "Since Go 1.19, standard library sync/atomic has typed atomic values."
+    severity: "warning"
+    alternatives:
+      - path: "sync/atomic"
+        reason: "Standard library (atomic.Int64, atomic.Bool, etc.)"
+
+  - package: "github.com/golang/mock"
+    reason: "Official package by Google was abandoned. Uber took over support."
+    severity: "critical"
+    alternatives:
+      - path: "go.uber.org/mock"
+        reason: "Official continuation of golang/mock by Uber"
+
+  - package: "github.com/mitchellh/mapstructure"
+    reason: "Library moved to go-viper organization. Old repository is no longer updated."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/go-viper/mapstructure/v2"
+        reason: "Current package location"
+
+  - package: "github.com/streadway/amqp"
+    reason: "Original RabbitMQ client was abandoned. Support taken over by official RabbitMQ team."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/rabbitmq/amqp091-go"
+        reason: "Official fork from RabbitMQ team"
+
+  - package: "github.com/Shopify/sarama"
+    reason: "Kafka client handed over to IBM. Shopify repository is no longer updated."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/IBM/sarama"
+        reason: "Current project location"
+
+  - package: "gopkg.in/yaml.v2"
+    reason: "Version 2 of YAML parser is very outdated and gets no security or feature updates."
+    severity: "warning"
+    alternatives:
+      - path: "gopkg.in/yaml.v3"
+        reason: "Current and faster v3 version"
+
+  - package: "github.com/ghodss/yaml"
+    reason: "Officially abandoned by author, handed over to Kubernetes SIGs."
+    severity: "warning"
+    alternatives:
+      - path: "sigs.k8s.io/yaml"
+        reason: "Official fork used in K8s"
+
+  - package: "github.com/urfave/cli"
+    reason: "First version of CLI framework is outdated (legacy)."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/urfave/cli/v2"
+        reason: "Current v2 version"
+
+  - package: "github.com/codegangsta/cli"
+    reason: "Very old name for urfave/cli."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/urfave/cli/v2"
+        reason: "Modern version of the package"
+
+  - package: "github.com/kelseyhightower/envconfig"
+    reason: "Author put project in maintenance mode. No further development."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/caarlos0/env/v10"
+        reason: "Actively developed and powerful env variables parser"
+
+  # ==========================================
+  # Validation / Schemas / Parsing
+  # ==========================================
+  - package: "gopkg.in/go-playground/validator.v8"
+    reason: "Eighth version of validator is hopelessly outdated (including v9)."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/go-playground/validator/v10"
+        reason: "Current v10 version"
+
+  - package: "gopkg.in/go-playground/validator.v9"
+    reason: "Ninth version of validator is outdated."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/go-playground/validator/v10"
+        reason: "Current v10 version"
+
+  - package: "github.com/xeipuuv/gojsonschema"
+    reason: "Previously the most popular JSON Schema validator, now abandoned. Limited to old drafts."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/santhosh-tekuri/jsonschema/v5"
+        reason: "Fast, passes all official tests, supports new drafts"
+
+  - package: "github.com/graphql-go/graphql"
+    reason: "Previously popular GraphQL server, project is abandoned (dead)."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/99designs/gqlgen"
+        reason: "De-facto standard for GraphQL in Go (code-first generation)"
+
+  - package: "github.com/mailru/easyjson"
+    reason: "Project is stagnating, code generation often breaks on new Go versions."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/goccy/go-json"
+        reason: "Drop-in replacement for encoding/json, faster than easyjson without code generation"
+
+  - package: "github.com/json-iterator/go"
+    reason: "Used to be the fastest JSON parser, but abandoned years ago."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/goccy/go-json"
+        reason: "Actively maintained and ultra-fast parser"
+
+  # ==========================================
+  # Developer Tools
+  # ==========================================
+  - package: "golang.org/x/lint"
+    reason: "Official golint was deprecated (frozen) in favor of more powerful tools."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/golangci/golangci-lint"
+        reason: "Industry standard for linting (contains dozens of linters)"
+
+  - package: "github.com/pilu/fresh"
+    reason: "Previously popular tool for live-reload, long dead."
+    severity: "critical"
+    alternatives:
+      - path: "github.com/air-verse/air"
+        reason: "Modern and actively maintained tool"
+
+  - package: "github.com/russross/blackfriday"
+    reason: "v1 version of Markdown parser is outdated. Transition to v2 or goldmark is recommended."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/yuin/goldmark"
+        reason: "Modern Markdown parser, used in official Go tools (Hugo, etc.)"
+      - path: "github.com/russross/blackfriday/v2"
+        reason: "Second version of the package"
+
+  # ==========================================
+  # Deprecated Standard Library Packages
+  # ==========================================
+  - package: "io/ioutil"
+    reason: "The io/ioutil package has been officially deprecated since Go 1.16."
+    severity: "warning"
+    alternatives:
+      - path: "io"
+        reason: "Use io.ReadAll, io.NopCloser, etc."
+      - path: "os"
+        reason: "Use os.ReadFile, os.WriteFile, os.ReadDir, etc."
+
+  - package: "golang.org/x/net/context"
+    reason: "Historical package. Context has been part of the standard library for a long time."
+    severity: "critical"
+    alternatives:
+      - path: "context"
+        reason: "Go standard library"
+
+  # ==========================================
+  # Messengers and APIs
+  # ==========================================
+  - package: "github.com/nlopes/slack"
+    reason: "Unofficial Slack client repository moved to the official community organization."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/slack-go/slack"
+        reason: "Current project location"
+
+  - package: "github.com/go-telegram-bot-api/telegram-bot-api"
+    reason: "Old version (v4 and below) of Telegram API. Does not support new Telegram features."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+        reason: "Current v5 version (note that the project is rarely updated)"
+      - path: "github.com/mymmrac/telego"
+        reason: "Modern, actively maintained alternative"
+
+  - package: "github.com/tucnak/telebot"
+    reason: "The telebot project moved to a new import path."
+    severity: "warning"
+    alternatives:
+      - path: "gopkg.in/telebot.v3"
+        reason: "Current v3 version of the framework"
+
+  # ==========================================
+  # Distributed Systems and Databases
+  # ==========================================
+  - package: "github.com/coreos/etcd"
+    reason: "Old import path for etcd. Project moved to go.etcd.io domain a long time ago."
+    severity: "critical"
+    alternatives:
+      - path: "go.etcd.io/etcd/client/v3"
+        reason: "Official modern v3 client"
+
+  - package: "github.com/hashicorp/consul"
+    reason: "To interact with Consul from code, use the api subpackage, not the root."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/hashicorp/consul/api"
+        reason: "Official Go client for Consul"
+
+  # ==========================================
+  # Validation and Utilities
+  # ==========================================
+  - package: "github.com/asaskevich/govalidator"
+    reason: "Project has not been updated for a long time and is effectively abandoned."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/go-playground/validator/v10"
+        reason: "Modern standard for struct validation in Go"
+
+  - package: "github.com/jinzhu/copier"
+    reason: "Slow, uses heavy reflection, has issues with deep copying. Best avoided in high-load."
+    severity: "warning"
+    alternatives:
+      - path: "(code generation)"
+        reason: "Write mappers manually or use code generation (e.g. github.com/jmattheis/goverter)"
+
+  # ==========================================
+  # WebSockets
+  # ==========================================
+  - package: "golang.org/x/net/websocket"
+    reason: "Official x/net/websocket package doesn't implement many standard features and is not recommended for use."
+    severity: "warning"
+    alternatives:
+      - path: "github.com/gorilla/websocket"
+        reason: "De facto standard, despite being in maintenance mode"
+      - path: "github.com/coder/websocket"
+        reason: "Modern, high-performance fork (formerly nhooyr.io/websocket)"
